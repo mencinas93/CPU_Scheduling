@@ -34,7 +34,7 @@
 using namespace std;
 //job class with constructor of arrtime,burst and name
 class Job{
-public: Job(int id, int arrival_time,int burst_time): id_(id), arrival_time_(arrival_time), burst_time_(burst_time){}
+public: Job(int id, int arrival_time,int burst_time): id_(id), arrival_time_(arrival_time), burst_time_(burst_time), remaining_time_(burst_time){}
     int id() const {
         return id_;
     }
@@ -44,12 +44,64 @@ public: Job(int id, int arrival_time,int burst_time): id_(id), arrival_time_(arr
     int burst_time() const {
         return burst_time_;
     }
+    int remaining_time() const {
+            return remaining_time_;
+        }
+    //remainder time
+        void set_remaining_time(int remaining_time) {
+            remaining_time_ = remaining_time;
+        }
+    //updates the status of remaining time.
     //public access to private
 private:
     int id_;
     int arrival_time_;
     int burst_time_;
+    int remaining_time_;
 };
+
+class Scheduler {
+public:
+    Scheduler(vector<Job>& jobs) : jobs_(jobs) {}
+
+    void run() {
+        int current_time = 0;
+
+        while (!jobs_.empty()) {
+            Job& job = jobs_.front();
+
+            if (job.remaining_time() <= 10) {
+                cout << "$>Job " << job.id() << ", scheduled for " << job.remaining_time() << "ms, completed" << endl;
+                current_time += job.remaining_time();
+                jobs_.erase(jobs_.begin());
+            } else {
+                cout << "$>Job " << job.id() << ", scheduled for 10ms" << endl;
+                current_time += 10;
+                job.set_remaining_time(job.remaining_time()-10);
+
+                // Move the job to the back of the queue
+                jobs_.push_back(job);
+                jobs_.erase(jobs_.begin());            }
+            for (int i = 0; i < jobs_.size(); ) {
+                if (jobs_[i].arrival_time() <= current_time) {
+                    cout << "$>Job " << jobs_[i].id() << ", scheduled for " << jobs_[i].burst_time() - jobs_[i].remaining_time() << "ms" << endl;
+                    //add the job to the front of the queue
+                    jobs_.insert(jobs_.begin(), jobs_[i]);
+                    jobs_.erase(jobs_.begin() + i);
+                    i = 0;
+                } else {
+                    i++;
+            // Check if any new jobs have arrived
+           
+                }
+            }
+        }
+    }
+
+private:
+    vector<Job>& jobs_;
+};
+
 int main() {
     ifstream iFile;
     
@@ -61,7 +113,7 @@ int main() {
     //vector to place job lines
 
     string line;
-    int id = 0;
+    int id = 1;
     // name of ID
     while(getline(iFile,line)){
         int arrival_time,burst_time;
@@ -72,10 +124,15 @@ int main() {
 // if cant be inputted error alert
             continue;
         }
-        jobs.push_back(Job(id, arrival_time, burst_time));
+        jobs.push_back(Job(id++, arrival_time, burst_time));
     }
+    Scheduler scheduler(jobs);
+      scheduler.run();
+
+    
     for (const auto& job : jobs) {
             cout << "Job " << job.id() << ": Arrival Time " << job.arrival_time() << ", Burst Time " << job.burst_time() << endl;
         }
+     
     return 0;
 }
